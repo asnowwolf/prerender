@@ -1,0 +1,49 @@
+{
+  "name": "@awesome-fe/prerender",
+  "description": "common prerender utils",
+  "main": "./dist/index.js",
+  "bin": {
+    "prerender": "dist/bin/index.js"
+  },
+  "version": "0.3.2",
+  "author": "Zhicheng Wang<asnowwolf@gmail.com>",
+  "homepage": "https://github.com/asnowwolf/prerender",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/asnowwolf/prerender.git"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/asnowwolf/prerender/issues"
+  },
+  "scripts": {
+    "prelink": "rm -fr dist && tsc",
+    "prepublish": "rm -fr dist && tsc"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.1.7",
+    "@types/lodash": "^4.14.121",
+    "@types/mkdirp": "^0.5.2",
+    "@types/mocha": "^5.2.5",
+    "@types/node": "^9.6.41",
+    "@types/puppeteer": "^1.12.1",
+    "@types/yargs": "^12.0.8",
+    "chai": "^4.2.0",
+    "mocha": "^5.2.0",
+    "ts-node": "^5.0.1",
+    "tslint": "^5.12.0",
+    "typescript": "^3.2.2"
+  },
+  "dependencies": {
+    "lodash": "^4.17.11",
+    "mkdirp": "^0.5.1",
+    "puppeteer": "^1.12.2",
+    "rehype-parse": "^6.0.0",
+    "rehype-remark": "^5.0.1",
+    "remark-stringify": "^6.0.4",
+    "rxjs": "^6.3.3",
+    "string-width": "^3.0.0",
+    "unified": "^7.1.0",
+    "yargs": "^12.0.5"
+  }
+}
