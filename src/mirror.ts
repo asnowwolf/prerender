@@ -40,9 +40,6 @@ export class MirrorUtils {
       });
     });
     await page.goto(url, { waitUntil: 'networkidle2' });
-    if (this.selectors) {
-      await this.selectors.forEach(async (selector) => page.waitForSelector(selector));
-    }
     const content = await page.content();
     const filename = fileNameOf(url, outDir, true);
     saveUrl(filename, new Buffer(content, 'utf-8'));
