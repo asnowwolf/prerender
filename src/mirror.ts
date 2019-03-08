@@ -1,19 +1,22 @@
 import { Browser, launch, Response } from 'puppeteer';
 import { basename, dirname, join } from 'path';
 import { sync as mkdirp } from 'mkdirp';
-import { chunk, difference, uniq } from 'lodash';
+import { chunk, differenceBy, uniq } from 'lodash';
 import { writeFileSync } from 'fs';
 import { MirrorParams } from './bin/commands/mirror';
 import { htmlToMd } from './utils';
 
 export class MirrorUtils {
-  private fetchedUrls: string[] = [];
+  private requestedUrls: string[] = [];
 
   private readonly outDir: string;
   private readonly urls: string[];
   private readonly recursive: boolean;
   private readonly generateMd: boolean;
   private readonly selectors: string[];
+  private blacklist: (RegExp | string)[] = [
+    'https://platform.twitter.com/widgets.js',
+  ];
 
   constructor(params: MirrorParams) {
     this.outDir = params.outDir;
@@ -24,16 +27,31 @@ export class MirrorUtils {
   }
 
   async renderPage(browser: Browser, outDir: string, url: string) {
+    if (this.requestedUrls.indexOf(url) !== -1) {
+      return;
+    }
+    this.requestedUrls.push(url);
     const page = await browser.newPage();
     const responses: Response[] = [];
+    page.setRequestInterception(true);
+    page.on('request', (req) => {
+      if (this.isBlocked(req.url())) {
+        req.abort('blockedbyclient');
+      } else {
+        req.continue();
+      }
+    });
     page.on('response', (resp) => {
       responses.push(resp);
     });
-    page.on('load', () => {
-      responses.forEach(async (resp) => {
+    page.on('requestfailed', (req) => {
+      console.log(page.url(), req.url(), req.failure());
+    });
+    page.on('load', async () => {
+      for (let i = 0; i < responses.length; ++i) {
+        const resp = responses[i];
         const request = resp.request();
         const url = request.url();
-        this.fetchedUrls.push(url);
         // 不处理 data 协议
         if (new URL(url).protocol === 'data:') {
           return;
@@ -50,9 +68,11 @@ export class MirrorUtils {
         const isHtml = (headers['content-type'] || '').indexOf('html') !== -1;
         const filename = fileNameOf(url, outDir, isHtml);
         saveUrl(filename, await resp.buffer());
-      });
+      }
     });
-    await page.goto(url, { waitUntil: 'networkidle2', timeout: 3000 });
+    await page.goto(url, { waitUntil: 'networkidle2' }).catch((e) => {
+      console.error(url, e);
+    });
     const content = await page.content();
     const filename = fileNameOf(url, outDir, true);
     saveUrl(filename, new Buffer(content, 'utf-8'));
@@ -72,10 +92,14 @@ export class MirrorUtils {
       const links = await page.evaluate(() => {
         return Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href]')).map(a => a.href);
       });
-      await this.renderPageGroup(browser, outDir, difference(links.filter(link => this.inSubFolder(link)), this.fetchedUrls));
+      await page.close();
+      const urlsInSubFolder = uniq(links.filter(link => this.inSubFolder(link)).map(majorPartOf));
+      const nextUrls = differenceBy(urlsInSubFolder, this.requestedUrls, (url) => majorPartOf(url));
+      await this.renderPageGroup(browser, outDir, nextUrls);
+    } else {
+      await page.close();
     }
 
-    await page.close();
     console.log(`rendered ${url}.`);
   }
 
@@ -84,18 +108,31 @@ export class MirrorUtils {
   }
 
   async renderPageGroup(browser: Browser, outDir: string, urls: string[]) {
-    await Promise.all(urls.map(url => this.renderPage(browser, outDir, url)));
+    for (let i = 0; i < urls.length; ++i) {
+      await this.renderPage(browser, outDir, urls[i]);
+    }
   }
 
   async mirror() {
-    const browser = await launch({ defaultViewport: { width: 1280, height: 768 } });
+    const browser = await launch({ defaultViewport: { width: 1280, height: 768 }, headless: false });
     const groups = chunk(uniq(this.urls), 4);
     for (let i = 0; i < groups.length; ++i) {
-      await this.renderPageGroup(browser, this.outDir, groups[i]);
+      await this.renderPageGroup(browser, this.outDir, groups[i]).catch((e) => {
+        console.log(e);
+      });
     }
     await browser.close();
   }
 
+  private isBlocked(url: string) {
+    return !!this.blacklist.find(rule => {
+      if (rule instanceof RegExp) {
+        return rule.test(url);
+      } else {
+        return url === rule;
+      }
+    });
+  }
 }
 
 function isNonExtHtmlFile(pathname: string): boolean {
@@ -125,4 +162,8 @@ function saveUrl(filename: string, buffer: Buffer): void {
 
 function replaceExtName(filename: string, dotPrefixedExtName: string): string {
   return join(dirname(filename), basename(filename, '.html') + dotPrefixedExtName);
+}
+
+function majorPartOf(url: string): string {
+  return url.replace(/#.*$/, '').replace(/\/$/, '');
 }
