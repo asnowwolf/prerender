@@ -52,7 +52,7 @@ export class MirrorUtils {
         saveUrl(filename, await resp.buffer());
       });
     });
-    await page.goto(url, { waitUntil: 'networkidle2' });
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 3000 });
     const content = await page.content();
     const filename = fileNameOf(url, outDir, true);
     saveUrl(filename, new Buffer(content, 'utf-8'));
