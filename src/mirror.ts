@@ -31,12 +31,25 @@ export class MirrorUtils {
     });
     page.on('load', () => {
       responses.forEach(async (resp) => {
-        const request = await resp.request();
-        this.fetchedUrls.push(request.url());
-        const headers = await resp.headers();
-        const isHtml = headers['content-type'].indexOf('html') !== -1;
-        const filename = fileNameOf(request.url(), outDir, isHtml);
-        await saveUrl(filename, await resp.buffer());
+        const request = resp.request();
+        const url = request.url();
+        this.fetchedUrls.push(url);
+        // 不处理 data 协议
+        if (new URL(url).protocol === 'data:') {
+          return;
+        }
+        // 忽略跳转类协议
+        if (resp.status() >= 300 && resp.status() < 400) {
+          return;
+        }
+        // 忽略 404
+        if (resp.status() === 404) {
+          return;
+        }
+        const headers = resp.headers();
+        const isHtml = (headers['content-type'] || '').indexOf('html') !== -1;
+        const filename = fileNameOf(url, outDir, isHtml);
+        saveUrl(filename, await resp.buffer());
       });
     });
     await page.goto(url, { waitUntil: 'networkidle2' });
@@ -44,7 +57,7 @@ export class MirrorUtils {
     const filename = fileNameOf(url, outDir, true);
     saveUrl(filename, new Buffer(content, 'utf-8'));
     if (this.generateMd) {
-      const contents = await page.evaluate((selectors) => {
+      const contents = await page.evaluate((selectors: string[]) => {
         return selectors.map((selector) => {
           const elements = Array.from(document.querySelectorAll<HTMLElement>(selector));
           return elements.map(element => element.innerHTML);
@@ -93,7 +106,7 @@ function isDirectory(pathname: string): boolean {
   return pathname.endsWith('/');
 }
 
-function fileNameOf(url: string, outDir: string, isHtml: boolean) {
+function fileNameOf(url: string, outDir: string, isHtml: boolean): string {
   const { host, pathname } = new URL(url);
 
   const decodedPathname = decodeURIComponent(pathname);
