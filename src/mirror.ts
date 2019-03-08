@@ -70,6 +70,7 @@ export class MirrorUtils {
         saveUrl(filename, await resp.buffer());
       }
     });
+    console.log('rendering ', url);
     await page.goto(url, { waitUntil: 'networkidle2' }).catch((e) => {
       console.error(url, e);
     });
@@ -93,14 +94,14 @@ export class MirrorUtils {
         return Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href]')).map(a => a.href);
       });
       await page.close();
+      console.log(`rendered ${url}.`);
       const urlsInSubFolder = uniq(links.filter(link => this.inSubFolder(link)).map(majorPartOf));
       const nextUrls = differenceBy(urlsInSubFolder, this.requestedUrls, (url) => majorPartOf(url));
       await this.renderPageGroup(browser, outDir, nextUrls);
     } else {
       await page.close();
+      console.log(`rendered ${url}.`);
     }
-
-    console.log(`rendered ${url}.`);
   }
 
   inSubFolder(link: string): boolean {
@@ -114,7 +115,7 @@ export class MirrorUtils {
   }
 
   async mirror() {
-    const browser = await launch({ defaultViewport: { width: 1280, height: 768 }, headless: false });
+    const browser = await launch({ defaultViewport: { width: 1280, height: 768 } });
     const groups = chunk(uniq(this.urls), 4);
     for (let i = 0; i < groups.length; ++i) {
       await this.renderPageGroup(browser, this.outDir, groups[i]).catch((e) => {
