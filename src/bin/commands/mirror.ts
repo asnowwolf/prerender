@@ -26,7 +26,7 @@ export const builder: CommandBuilder = {
   },
   generateMd: {
     boolean: true,
-    default: true,
+    default: false,
     description: '是否同时为 html 中 selectors 指定的内容生成 markdown 版本',
     alias: 'md',
   },
