@@ -33,12 +33,13 @@ export class MirrorUtils {
     this.requestedUrls.push(url);
     const page = await browser.newPage();
     const responses: Response[] = [];
-    page.setRequestInterception(true);
-    page.on('request', (req) => {
+    await page.setRequestInterception(true);
+    await page.setCacheEnabled(false);
+    page.on('request', async (req) => {
       if (this.isBlocked(req.url())) {
         req.abort('blockedbyclient');
       } else {
-        req.continue();
+        await req.continue();
       }
     });
     page.on('response', (resp) => {
@@ -50,6 +51,9 @@ export class MirrorUtils {
     page.on('load', async () => {
       for (let i = 0; i < responses.length; ++i) {
         const resp = responses[i];
+        if (resp.fromCache()) {
+          console.error(resp.request().url() + ' is loaded from cache');
+        }
         const request = resp.request();
         const url = request.url();
         // 不处理 data 协议
