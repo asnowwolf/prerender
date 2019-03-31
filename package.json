@@ -5,7 +5,7 @@
   "bin": {
     "prerender": "dist/bin/index.js"
   },
-  "version": "0.0.6",
+  "version": "0.0.7",
   "author": "Zhicheng Wang<asnowwolf@gmail.com>",
   "homepage": "https://github.com/asnowwolf/prerender",
   "repository": {
