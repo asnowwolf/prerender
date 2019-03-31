@@ -5,6 +5,7 @@ import { chunk, differenceBy, uniq } from 'lodash';
 import { writeFileSync } from 'fs';
 import { MirrorParams } from './bin/commands/mirror';
 import { htmlToMd } from './utils';
+import { URL } from 'url';
 
 export class MirrorUtils {
   private requestedUrls: string[] = [];
