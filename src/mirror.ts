@@ -79,6 +79,10 @@ export class MirrorUtils {
     await page.goto(url, { waitUntil: 'networkidle2' }).catch((e) => {
       console.error(url, e);
     });
+    const selectors = this.selectors.join(',');
+    if (selectors) {
+      await page.waitForSelector(selectors, { visible: true, hidden: false });
+    }
     const content = await page.content();
     const filename = fileNameOf(url, outDir, true);
     saveUrl(filename, new Buffer(content, 'utf-8'));

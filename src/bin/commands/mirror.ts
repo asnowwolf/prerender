@@ -17,6 +17,7 @@ export const builder: CommandBuilder = {
   },
   selectors: {
     type: 'array',
+    alias: ['s', 'selector'],
     description: '内容的选择器，可以同时指定多个',
   },
   recursive: {
