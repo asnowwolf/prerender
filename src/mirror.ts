@@ -81,7 +81,7 @@ export class MirrorUtils {
     });
     const selectors = this.selectors.join(',');
     if (selectors) {
-      await page.waitForSelector(selectors, { visible: true, hidden: false });
+      await page.waitForSelector(selectors, { visible: true, hidden: false, timeout: 3000 });
     }
     const content = await page.content();
     const filename = fileNameOf(url, outDir, true);
