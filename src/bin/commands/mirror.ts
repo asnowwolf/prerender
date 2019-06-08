@@ -18,6 +18,7 @@ export const builder: CommandBuilder = {
   selectors: {
     type: 'array',
     alias: ['s', 'selector'],
+    default: [],
     description: '内容的选择器，可以同时指定多个',
   },
   recursive: {
@@ -31,6 +32,11 @@ export const builder: CommandBuilder = {
     description: '是否同时为 html 中 selectors 指定的内容生成 markdown 版本',
     alias: 'md',
   },
+  timeout: {
+    number: true,
+    default: 3000,
+    description: '查找 selector 时的超时时间',
+  },
 };
 
 export interface MirrorParams {
@@ -39,6 +45,7 @@ export interface MirrorParams {
   selectors: string[];
   recursive: boolean;
   generateMd: boolean;
+  timeout: number;
 }
 
 export const handler = function (params: MirrorParams) {

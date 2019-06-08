@@ -18,6 +18,7 @@ export class MirrorUtils {
   private blacklist: (RegExp | string)[] = [
     'https://platform.twitter.com/widgets.js',
   ];
+  private readonly timeout: number;
 
   constructor(params: MirrorParams) {
     this.outDir = params.outDir;
@@ -25,6 +26,7 @@ export class MirrorUtils {
     this.recursive = params.recursive;
     this.selectors = params.selectors;
     this.generateMd = params.generateMd;
+    this.timeout = params.timeout;
   }
 
   async renderPage(browser: Browser, outDir: string, url: string) {
@@ -81,7 +83,7 @@ export class MirrorUtils {
     });
     const selectors = this.selectors.join(',');
     if (selectors) {
-      await page.waitForSelector(selectors, { visible: true, hidden: false, timeout: 3000 });
+      await page.waitFor(selectors, { timeout: this.timeout }).catch(console.error);
     }
     const content = await page.content();
     const filename = fileNameOf(url, outDir, true);
